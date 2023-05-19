@@ -14,4 +14,9 @@ result = partitioning.max_partitioning(data, leaf_size=150)
 #     print(len(data))
 
 local_labels = partitioning.get_local_model_labels(data, leaf_size=150)
-print(local_labels)
+# print(local_labels)
+
+model_list = [local_labels]
+global_labels = partitioning.get_global_model_labels(model_list)
+
+print(global_labels)

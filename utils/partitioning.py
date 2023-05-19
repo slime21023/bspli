@@ -68,7 +68,8 @@ def max_partitioning(data, leaf_size: int) -> list:
 def get_local_model_labels(data, leaf_size: int) -> tuple:
     result = {
         "means": None,
-        "data": None
+        "data": None,
+        "ids": None
     }
 
     leaves = max_partitioning(data, leaf_size)
@@ -81,19 +82,23 @@ def get_local_model_labels(data, leaf_size: int) -> tuple:
             result["means"] = torch.vstack((result["means"], mean))
 
         ids = torch.full(size=(ldata.shape[0], 1), fill_value=idx)
-        labeled_data = torch.hstack((ldata, ids))
-        if result["data"] == None:
-            result["data"] = labeled_data
+        if result["ids"] == None:
+            result["ids"] = ids
         else:
-            result["data"] = torch.vstack((result["data"], labeled_data))
+            result["ids"] = torch.vstack((result["ids"], ids))
 
-    return result
+        if result["data"] == None:
+            result["data"] = ldata
+        else:
+            result["data"] = torch.vstack((result["data"], ldata))
+
+    return (result["means"], result["data"], result["ids"])
 
 
 def get_global_model_labels(model_list: list) -> torch.Tensor:
     means_table = None
     for idx, item in enumerate(model_list):
-        means, _ = item
+        means = item[0]
         ma = torch.tensor(means)
         ids = torch.full(size=(ma.shape[0], 1), fill_value=idx)
         result = torch.hstack((ma, ids))
