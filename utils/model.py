@@ -24,25 +24,22 @@ class MLP():
         self.model.to(device)
 
         self.optimizer = optim.SGD(self.model.parameters(), lr=0.1, momentum=0.9)
-        self.loss_fn = torch.nn.NLLLoss()
+        self.loss_fn = torch.nn.CrossEntropyLoss()
         self.model.train()
 
-        for epoch  in range(2000):
-            running_loss = 0.0
+        for epoch  in range(100):
             for batch, (points, labels) in enumerate(train_loader, 0):
-            
+                labels = labels.reshape(labels.shape[0])
+
                 # get the inputs
-                points = Variable(points.to(torch.float32))
-                labels = Variable(labels.type(torch.float32))
-                print(f"points shape: {points.shape}")
-                print(f"labels shape: {labels.shape}")
+                points = Variable(points.type(torch.LongTensor))
+                labels = Variable(labels.type(torch.LongTensor))
 
                 # zero the parameter gradients
                 self.optimizer.zero_grad()
 
                 # predict classes using points from the training set
-                outputs = self.model(points)
-                print(f"outputs shape: {outputs.shape}")
+                outputs = self.model(points.to(torch.float32))
 
                 # compute the loss based on model output and real labels
                 loss = self.loss_fn(outputs, labels)
@@ -53,14 +50,9 @@ class MLP():
                 # adjust parameters based on the calculated gradients
                 self.optimizer.step()
 
-                running_loss += loss.item()     # extract the loss value
                 if batch % 100 == 99:
-                    # print every 1000 (twice per epoch) 
-                    print('[%d, %5d] loss: %.3f' %
-                        (epoch + 1, batch + 1, running_loss / 1000))
-                    
-                    # zero the loss
-                    running_loss = 0.0
+                    print(f'{epoch + 1}, {batch + 1} loss: {loss.item() / 100 }')
+
         self.model.eval()
 
     def pred(self, X):

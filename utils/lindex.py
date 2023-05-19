@@ -19,11 +19,11 @@ class LIndexing:
         print(f"input_size : {train_data.shape[1]}")
         self.mlp = model.MLP(
             input_size=train_data.shape[1],
-            num_classes=train_labels[-1, -1]
+            num_classes=(train_labels[-1, -1]+1)
         )
 
         # print(self.mlp.model)
-        loader = DataLoader(TensorDataset(train_data, train_labels), shuffle=True, batch_size=16)
+        loader = DataLoader(TensorDataset(train_data, train_labels), shuffle=True, batch_size=100)
         self.mlp.train(loader)
 
     
