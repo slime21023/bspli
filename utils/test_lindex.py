@@ -1,4 +1,3 @@
-import partitioning
 import torch
 import lindex
 import sys

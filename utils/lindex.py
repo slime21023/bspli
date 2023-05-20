@@ -5,6 +5,11 @@ from torch.utils.data import DataLoader, TensorDataset
 
 
 class LIndexing:
+    """
+    The local learned indexing model
+    To handle the query processing
+    """
+
     def __init__(self, leafsize):
         """
         leafsize: the leaf size of local model that used by partitioning
