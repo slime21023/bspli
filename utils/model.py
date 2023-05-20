@@ -5,7 +5,7 @@ from torch import optim
 
 # check if the GPU runtime env is available
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
+EPOCH_NUM = 20
 
 class MLP():
     def __init__(self, input_size, num_classes, error_rate=0.03, hidden_size=100):
@@ -27,7 +27,7 @@ class MLP():
         self.loss_fn = torch.nn.CrossEntropyLoss()
         self.model.train()
 
-        for epoch  in range(100):
+        for epoch  in range(EPOCH_NUM):
             for batch, (points, labels) in enumerate(train_loader, 0):
                 labels = labels.reshape(labels.shape[0])
 
@@ -57,8 +57,7 @@ class MLP():
 
     def pred(self, X):
         self.model.eval()
-        y_hat = torch.max(self.model(X), 1)
-        return y_hat
+        return self.model(X)
 
 
 
