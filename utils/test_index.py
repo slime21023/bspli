@@ -13,5 +13,6 @@ print(f"local model len:{len(index._l_model)}")
 
 qp = data[0]
 # print(qp)
-pred = index.query(qp, k=50)
+pred = index.query(qp, k=100)
+pred = pred.to(torch.int)
 print(f"pred: {pred}")
