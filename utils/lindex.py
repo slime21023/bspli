@@ -36,6 +36,7 @@ class LIndexing:
         self.mlp.train(loader)
 
     def query(self, qp, k) -> list:
+        qp = qp.reshape(1, qp.shape[0])
         output = self.mlp.model(qp)
         output = output.reshape(output.shape[1])
         pred = torch.nonzero(output)[0][0]
@@ -52,8 +53,10 @@ class LIndexing:
             (search_points[:, -1] >= min_block_number) & 
             (search_points[:, -1] <= max_block_number)
         ]
+        print(f"search_points shape: {search_points.shape}")
 
         norm = torch.norm(search_points - qp, dim=(1))
+        print(f"norm shape: {norm.shape}")
         topk = torch.topk(norm, k)[1]
         indices = self.index_data[topk, -1]
 

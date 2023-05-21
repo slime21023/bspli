@@ -22,11 +22,6 @@ class GIndexing:
         train_data = prepared_data[:, :-1]
         train_labels = prepared_data[:, -1]
 
-        print(f"train data shape: {train_data.shape}")
-        print(f"train labels shape: {train_labels.shape}")
-        print(f"Global num classes: {int(train_labels[-1] + 1)}")
-
-
         self.mlp = model.MLP(
             input_size= train_data.shape[1],
             num_classes=int(train_labels[-1] + 1)
@@ -40,6 +35,7 @@ class GIndexing:
         self.mlp.train(loader)
 
     def query(self, qp):
+        qp = qp.reshape(1, qp.shape[0])
         output = self.mlp.model(qp)
         output = output.reshape(output.shape[1])    
         pred = torch.nonzero(output)[0][0]
