@@ -41,6 +41,7 @@ class LIndexing:
         output = output.reshape(output.shape[1])
         pred = torch.nonzero(output)[0][0]
 
+        # Default search blocks
         error_rate = self.mlp.error_rate
         error_block_size = int(self.num_classes * error_rate)
 
@@ -48,15 +49,30 @@ class LIndexing:
         max_block_number = pred + error_block_size
         max_block_number = max_block_number if max_block_number < self.num_classes else self.num_classes
 
-        search_points = self.index_data[:, :-1]
-        search_points = search_points[
-            (search_points[:, -1] >= min_block_number) & 
-            (search_points[:, -1] <= max_block_number)
-        ]
-        print(f"search_points shape: {search_points.shape}")
+        def get_search_block(mininal, maximum, k: int):
+            search_points = self.index_data[:, :-1]
+            search_points = search_points[
+                (search_points[:, -1] >= mininal) & 
+                (search_points[:, -1] <= maximum)
+            ]
+
+            if search_points.shape[0] < k:
+                mininal = mininal -1 if mininal > 0 else 0
+                maximum = maximum +1 if maximum < self.num_classes else self.num_classes
+                return get_search_block(mininal, maximum, k)
+            else:
+                return search_points
+
+
+        search_points = get_search_block(
+            mininal=min_block_number,
+            maximum=max_block_number,
+            k=k
+        )
+
+        # print(f"search_points shape: {search_points.shape}")
 
         norm = torch.norm(search_points - qp, dim=(1))
-        print(f"norm shape: {norm.shape}")
         topk = torch.topk(norm, k)[1]
         indices = self.index_data[topk, -1]
 

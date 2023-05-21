@@ -11,7 +11,7 @@ index.train(data)
 
 print(f"local model len:{len(index._l_model)}")
 
-qp = data[50]
+qp = data[0]
 # print(qp)
 pred = index.query(qp, k=50)
 print(f"pred: {pred}")
