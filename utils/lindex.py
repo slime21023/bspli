@@ -73,7 +73,7 @@ class LIndexing:
         # print(f"search_points shape: {search_points.shape}")
 
         norm = torch.norm(search_points - qp, dim=(1))
-        topk = torch.topk(norm, k)[1]
+        topk = torch.topk(norm, k, largest=False)[1]
         indices = self.index_data[topk, -1]
 
         return indices
