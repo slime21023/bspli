@@ -1,5 +1,5 @@
-import model
-import partitioning
+from . import model
+from . import partitioning
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -10,8 +10,10 @@ class GIndexing:
     To predict the query point in which local learned indexing model
     """
 
-    def __init__(self, leafsize=2):
+    def __init__(self, leafsize=2, epoch_num = 5, hidden_size = 100):
         self.leafsize = leafsize
+        self.epoch_num = epoch_num
+        self.hidden_size = hidden_size
 
     def train(self, model_list: list):
         """
@@ -24,7 +26,9 @@ class GIndexing:
 
         self.mlp = model.MLP(
             input_size= train_data.shape[1],
-            num_classes=int(train_labels[-1] + 1)
+            num_classes=int(train_labels[-1] + 1),
+            epoch_num=self.epoch_num,
+            hidden_size=self.hidden_size
         )
 
         self.num_classes = (train_labels[-1] + 1)

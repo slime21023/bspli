@@ -1,5 +1,5 @@
-import partitioning
-import model
+from . import partitioning
+from . import model
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -10,11 +10,13 @@ class LIndexing:
     To handle the query processing
     """
 
-    def __init__(self, leafsize):
+    def __init__(self, leafsize, epoch_num = 5, hidden_size = 100):
         """
         leafsize: the leaf size of local model that used by partitioning
         """
         self.leafsize = leafsize
+        self.epoch_num = epoch_num
+        self.hidden_size = hidden_size
 
     def train(self, data):
         prepared_data = partitioning.get_local_model_labels(
@@ -26,7 +28,9 @@ class LIndexing:
         train_data = index_data[:, :-1]
         self.mlp = model.MLP(
             input_size=train_data.shape[1],
-            num_classes=(train_labels[-1, -1]+1)
+            num_classes=(train_labels[-1, -1]+1),
+            epoch_num=self.epoch_num,
+            hidden_size=self.hidden_size
         )
         self.num_classes = train_labels[-1, -1] + 1
 

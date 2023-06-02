@@ -8,8 +8,13 @@ def random_partitioning(data ,leaf_size: int) -> list:
     randomly sample from the data points, and execute the binary partitioning
     """
 
+    if data.shape[0] <= leaf_size:
+        return [data]
+
     result =  []
     cdata = data[:, :-1]
+    
+
     # take the two data points
     indices = torch.randint(0, cdata.shape[0], size=(2,))
     first_norm = torch.norm(cdata- cdata[indices[0]], dim=(1))

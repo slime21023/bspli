@@ -5,11 +5,11 @@ from torch import optim
 
 # check if the GPU runtime env is available
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-EPOCH_NUM = 20
 
 class MLP():
-    def __init__(self, input_size, num_classes, error_rate=0.03, hidden_size=100):
+    def __init__(self, input_size, num_classes, epoch_num = 5, error_rate=0.03, hidden_size=100):
         self.error_rate = error_rate
+        self.epoch_num = epoch_num
         self.model = nn.Sequential(
             nn.Linear(input_size, hidden_size),
             nn.LeakyReLU(0.2),
@@ -27,7 +27,7 @@ class MLP():
         self.loss_fn = torch.nn.CrossEntropyLoss()
         self.model.train()
 
-        for epoch  in range(EPOCH_NUM):
+        for epoch  in range(self.epoch_num):
             for batch, (points, labels) in enumerate(train_loader, 0):
                 labels = labels.reshape(labels.shape[0])
 
