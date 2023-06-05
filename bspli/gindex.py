@@ -1,5 +1,5 @@
-from . import model
-from . import partitioning
+import model
+import partitioning
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -20,6 +20,7 @@ class GIndexing:
         model_list: the list of the local models
         """
         prepared_data = partitioning.get_global_model_labels(model_list)
+        print(f'global index train smaple count: {prepared_data.shape[0]}')
         self.index_data = prepared_data
         train_data = prepared_data[:, :-1]
         train_labels = prepared_data[:, -1]
@@ -35,13 +36,13 @@ class GIndexing:
 
         loader = DataLoader(TensorDataset(
             train_data, train_labels
-        ), shuffle=True, batch_size=4)
+        ), shuffle=True, batch_size=5)
         self.mlp.train(loader)
 
     def query(self, qp):
         qp = qp.reshape(1, qp.shape[0])
         output = self.mlp.model(qp)
         output = output.reshape(output.shape[1])    
-        pred = torch.nonzero(output)[0][0]
+        pred = int(self.mlp.model(qp)[0][0])
         return pred
         

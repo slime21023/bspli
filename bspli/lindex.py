@@ -1,5 +1,5 @@
-from . import partitioning
-from . import model
+import partitioning
+import model
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -41,9 +41,7 @@ class LIndexing:
 
     def query(self, qp, k) -> list:
         qp = qp.reshape(1, qp.shape[0])
-        output = self.mlp.model(qp)
-        output = output.reshape(output.shape[1])
-        pred = torch.nonzero(output)[0][0]
+        pred = int(self.mlp.model(qp)[0][0])
 
         # Default search blocks
         error_rate = self.mlp.error_rate

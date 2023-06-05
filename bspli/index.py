@@ -1,20 +1,21 @@
-from . import partitioning
-from . import gindex
-from . import lindex
+import partitioning
+import gindex
+import lindex
 import torch
 import sys
 sys.setrecursionlimit(100000)
 
 
 class Indexing:
-    def __init__(self, gl_size, ll_size, epoch_num=5, hidden_size=100, random_partitioning=False):
+    def __init__(self, gl_size, ll_size, g_epoch_num=10, l_epoch_num=5, hidden_size=100, random_partitioning=False):
         """
         gl_size: the leaf size of global model that used by partitioning
         ll_size: the leaf size of local model that used by partitioning
         """
         self._gl_size = gl_size
         self._ll_size = ll_size
-        self.epoch_num = epoch_num
+        self.g_epoch_num = g_epoch_num
+        self.l_epoch_num = l_epoch_num
         self.hidden_size=hidden_size
         self.random_partitioning = random_partitioning
         self._g_model = None
@@ -29,7 +30,7 @@ class Indexing:
             print("training local model")
             lin = lindex.LIndexing(
                 self._ll_size, 
-                epoch_num=self.epoch_num, 
+                epoch_num=self.l_epoch_num, 
                 hidden_size=self.hidden_size
             )
 
@@ -67,7 +68,7 @@ class Indexing:
 
         # Train the global index model
         means = list(map(lambda i: (i.means,), self._l_model))
-        self._g_model = gindex.GIndexing(leafsize=self._gl_size, epoch_num=self.epoch_num, hidden_size=self.hidden_size)
+        self._g_model = gindex.GIndexing(leafsize=self._gl_size, epoch_num=self.g_epoch_num, hidden_size=self.hidden_size)
         print("trainging global model")
         self._g_model.train(model_list=means)
         print("finish")

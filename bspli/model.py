@@ -13,8 +13,9 @@ class MLP():
         self.model = nn.Sequential(
             nn.Linear(input_size, hidden_size),
             nn.LeakyReLU(0.2),
-            nn.Linear(hidden_size, num_classes),
-            nn.Softmax(dim=1)
+            nn.Linear(hidden_size, int(hidden_size/2)),
+            nn.LeakyReLU(0.2),
+            nn.Linear(int(hidden_size/2), 1),
         ).to(device)
 
     def train(self, train_loader):
@@ -23,8 +24,9 @@ class MLP():
         # Convert model parameters and buffers to CPU or Cuda
         self.model.to(device)
 
-        self.optimizer = optim.SGD(self.model.parameters(), lr=0.1, momentum=0.9)
-        self.loss_fn = torch.nn.CrossEntropyLoss()
+        # self.optimizer = optim.SGD(self.model.parameters(), lr=0.1, momentum=0.9)
+        self.optimizer = optim.Adamax(self.model.parameters(), lr=0.1)
+        self.loss_fn = nn.SmoothL1Loss(reduction ="mean")
         self.model.train()
 
         for epoch  in range(self.epoch_num):
@@ -32,8 +34,8 @@ class MLP():
                 labels = labels.reshape(labels.shape[0])
 
                 # get the inputs
-                points = Variable(points.type(torch.LongTensor))
-                labels = Variable(labels.type(torch.LongTensor))
+                points = Variable(points.type(torch.FloatTensor))
+                labels = Variable(labels.type(torch.FloatTensor))
 
                 # zero the parameter gradients
                 self.optimizer.zero_grad()
