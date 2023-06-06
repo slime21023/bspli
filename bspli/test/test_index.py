@@ -1,5 +1,7 @@
-import torch
 import sys
+sys.path.append("../")
+
+import torch
 import index
 sys.setrecursionlimit(10000)
 
