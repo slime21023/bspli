@@ -14,7 +14,7 @@ class GIndexing:
     To predict the query point in which local learned indexing model
     """
 
-    def __init__(self, leafsize=2, epoch_num = 20, hidden_size = 100, block_range=5):
+    def __init__(self, leafsize=2, epoch_num = 20, hidden_size = 100, block_range=2):
         self.leafsize = leafsize
         self.epoch_num = epoch_num
         self.hidden_size = hidden_size
@@ -29,7 +29,7 @@ class GIndexing:
         self.index_data = prepared_data
         train_data = prepared_data[:, :-1]
         train_labels = prepared_data[:, -1]
-        self.max_block = (train_labels[-1] + 1)
+        self.max_block = int(train_labels[-1])
 
         # Define the model for global learned index
         self.mlp = nn.Sequential(
@@ -78,9 +78,9 @@ class GIndexing:
         self.mlp.eval()
 
     def query(self, qp):
-        print(f'The global max block num: {self.max_block}')
+        # print(f'The global max block num: {self.max_block}')
         qp = qp.reshape(1, qp.shape[0]) 
-        pred = (self.mlp(qp)[0][0]).int()
+        pred = (self.mlp(qp).int().item())
         pred = 0 if pred < 0 else pred
         pred = self.max_block if pred > self.max_block else pred
         return pred

@@ -96,6 +96,9 @@ class LIndexing:
                 (search_points[:, -1] >= mininal) & 
                 (search_points[:, -1] <= maximum)
             ]
+            
+            print(f'mininal: {mininal}, maximum: {maximum}')
+            # print(f"search total numbers: {search_points.shape}")
 
             if search_points.shape[0] < k:
                 mininal = mininal -1 if mininal > 0 else 0

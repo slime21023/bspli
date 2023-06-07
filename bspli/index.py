@@ -8,7 +8,14 @@ sys.setrecursionlimit(100000)
 
 
 class Indexing:
-    def __init__(self, gl_size, ll_size, g_epoch_num=10, l_epoch_num=5, hidden_size=100, random_partitioning=False):
+    def __init__(self, gl_size, ll_size, 
+                 g_epoch_num=10, 
+                 l_epoch_num=5, 
+                 g_hidden_size=100, 
+                 l_hidden_size=100,
+                 g_block_range=1,
+                 l_block_range=5,
+                 random_partitioning=False):
         """
         gl_size: the leaf size of global model that used by partitioning
         ll_size: the leaf size of local model that used by partitioning
@@ -17,7 +24,10 @@ class Indexing:
         self._ll_size = ll_size
         self.g_epoch_num = g_epoch_num
         self.l_epoch_num = l_epoch_num
-        self.hidden_size=hidden_size
+        self.g_hidden_size= g_hidden_size
+        self.l_hidden_size = l_hidden_size
+        self.g_block_range = g_block_range
+        self.l_block_range = l_block_range
         self.random_partitioning = random_partitioning
         self._g_model = None
         self._l_model = []
@@ -32,7 +42,8 @@ class Indexing:
             lin = LIndexing(
                 self._ll_size, 
                 epoch_num=self.l_epoch_num, 
-                hidden_size=self.hidden_size
+                hidden_size=self.l_hidden_size,
+                block_range=self.l_block_range
             )
 
             lin.train(data)
@@ -69,16 +80,19 @@ class Indexing:
 
         # Train the global index model
         means = list(map(lambda i: (i.means,), self._l_model))
-        self._g_model = GIndexing(leafsize=self._gl_size, epoch_num=self.g_epoch_num, hidden_size=self.hidden_size)
+        self._g_model = GIndexing(
+            leafsize=self._gl_size, 
+            epoch_num=self.g_epoch_num,
+            block_range=self.g_block_range,
+            hidden_size=self.g_hidden_size
+        )
         print("trainging global model")
         self._g_model.train(model_list=means)
         print("finish")
 
     def query(self, qp, k):
-        # qp = qp.reshape(1, qp.shape[0])
         # predict the query point in which local model
         pred = self._g_model.query(qp)
-        print(f"predicted local model: {pred}")
 
         # get the topk result indices
         indices = self._l_model[pred].query(qp, k)

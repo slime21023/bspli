@@ -45,9 +45,15 @@ def max_partitioning(data, leaf_size: int) -> list:
     use mean of the data points, and execute the binary partitioning
     """
 
+    
+
     result = []
     cdata = data[:, :-1]
     mean = torch.mean(cdata, 0)
+
+    if data.shape[0] <= leaf_size:
+        return [(mean , data)]
+
     md = torch.norm(cdata - mean.reshape(1, mean.shape[0]), dim=(1))
     first_max = cdata[torch.argmax(md)]
     fd = torch.norm(cdata - first_max, dim=(1))
