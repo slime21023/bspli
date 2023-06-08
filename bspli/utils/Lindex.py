@@ -33,13 +33,16 @@ class LIndexing:
         self.index_data = index_data
         train_data = index_data[:, :-1]
         self.max_block = train_labels[-1, -1] + 1
+        self.blocks = train_labels
 
         # Define the model for local learned index
         self.mlp = nn.Sequential(
             nn.Linear(in_features=train_data.shape[1], out_features=self.hidden_size),
-            nn.LeakyReLU(0.2),
+            nn.Hardsigmoid(),
+            # nn.Mish(),
             nn.Linear(self.hidden_size, int(self.hidden_size/2)),
-            nn.LeakyReLU(0.2),
+            # nn.Mish(),
+            nn.Hardsigmoid(),
             nn.Linear(int(self.hidden_size/2), 1),
         ).to(device)
 
@@ -47,8 +50,9 @@ class LIndexing:
         loader = DataLoader(TensorDataset(
             train_data, train_labels), shuffle=True, batch_size=100)
         
-        self.optimizer = optim.Adamax(self.mlp.parameters(), lr=0.1)
-        self.loss_fn = nn.SmoothL1Loss(reduction ="mean")
+        self.optimizer = optim.Adadelta(self.mlp.parameters(), lr=1.0, rho=0.9)
+        # self.loss_fn = nn.MSELoss(reduction="mean")
+        self.loss_fn = nn.HuberLoss(reduction ="mean", delta=0.48)
         self.mlp.train()
 
         for epoch  in range(self.epoch_num):
@@ -81,6 +85,7 @@ class LIndexing:
        
 
     def query(self, qp, k) -> list:
+        # print(f"max blocks: {self.max_block}")
         qp = qp.reshape(1, qp.shape[0])
         pred =  (self.mlp(qp)[0][0]).int()
         # Default search blocks
@@ -90,34 +95,30 @@ class LIndexing:
         max_block_number = pred + block_size
         max_block_number = max_block_number if max_block_number < self.max_block else self.max_block
 
-        def get_search_block(mininal, maximum, k: int):
-            search_points = self.index_data[:, :-1]
-            search_points = search_points[
-                (search_points[:, -1] >= mininal) & 
-                (search_points[:, -1] <= maximum)
-            ]
-            
-            print(f'mininal: {mininal}, maximum: {maximum}')
-            # print(f"search total numbers: {search_points.shape}")
+        def get_search_range(mininal, maximum, k: int):
+            search_range = torch.where(
+                (self.blocks >= mininal) & (self.blocks <= maximum)
+            )[0]
 
-            if search_points.shape[0] < k:
+            if search_range.size(dim=0) < k:
                 mininal = mininal -1 if mininal > 0 else 0
                 maximum = maximum +1 if maximum < self.max_block else self.max_block
-                return get_search_block(mininal, maximum, k)
+                return get_search_range(mininal, maximum, k)
             else:
-                return search_points
+                return search_range
 
 
-        search_points = get_search_block(
+        search_range = get_search_range(
             mininal=min_block_number,
             maximum=max_block_number,
             k=k
         )
 
-        # print(f"search_points shape: {search_points.shape}")
-
-        norm = torch.norm(search_points - qp, dim=(1))
+        
+        search_points = self.index_data[search_range]
+        norm = torch.norm(search_points[:, :-1] - qp, dim=(1))
         topk = torch.topk(norm, k, largest=False)[1]
-        indices = self.index_data[topk, -1]
+        indices = search_points[topk, -1]
 
         return indices
+    
