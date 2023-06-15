@@ -77,11 +77,27 @@ class GIndexing:
 
         self.mlp.eval()
 
-    def query(self, qp):
+    def query(self, qp, block_range = None) -> range:
         # print(f'The global max block num: {self.max_block}')
         qp = qp.reshape(1, qp.shape[0]) 
         pred = (self.mlp(qp).int().item())
-        pred = 0 if pred < 0 else pred
-        pred = self.max_block if pred > self.max_block else pred
-        return pred
+
+        if block_range != None:
+            min_block = pred - block_range
+            min_block = 0 if  min_block < 0 else min_block
+
+            max_block = pred + block_range
+            max_block = self.max_block if max_block > self.max_block else max_block
+        else:
+            min_block = pred - self.block_range
+            min_block = 0 if  min_block < 0 else min_block
+
+            max_block = pred + self.block_range
+            max_block = self.max_block if max_block > self.max_block else max_block
+        
+        if (min_block >= max_block):
+            min_block = self.max_block if min_block > self.max_block else min_block
+            return range(min_block, min_block +1)
+
+        return range(min_block, max_block +1)
         

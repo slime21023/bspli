@@ -45,8 +45,6 @@ def max_partitioning(data, leaf_size: int) -> list:
     use mean of the data points, and execute the binary partitioning
     """
 
-    
-
     result = []
     cdata = data[:, :-1]
     mean = torch.mean(cdata, 0)
@@ -88,7 +86,7 @@ def get_local_model_labels(data, leaf_size: int) -> tuple:
         mean, ldata = item
 
         if result["means"] == None:
-            result["means"] = mean
+            result["means"] = torch.reshape(mean, (1, mean.shape[0]))
         else:
             result["means"] = torch.vstack((result["means"], mean))
 
@@ -109,7 +107,7 @@ def get_local_model_labels(data, leaf_size: int) -> tuple:
 def get_global_model_labels(model_list: list) -> torch.Tensor:
     means_table = None
     for idx, item in enumerate(model_list):
-        means = item[0]
+        means = item
         ma = torch.tensor(means)
         ids = torch.full(size=(ma.shape[0], 1), fill_value=idx)
         result = torch.hstack((ma, ids))

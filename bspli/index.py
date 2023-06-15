@@ -65,21 +65,24 @@ class Indexing:
         self._l_model = list(map(generate_local_model,  first_stage_partitioning))
 
 
-        # To Handle the class imbalance for means (global model)
+        # To Handle the imbalance of  datapoints (global model)
         def resampling(means: list) -> list:
             max_num = 0
             for m in means:
                 max_num = m.shape[0] if m.shape[0] > max_num else max_num
 
             for idx, m in enumerate(means):
-                indices = torch.randint(m.shape[0], size=(max-m.shape[0],))
-                means[idx] = torch.vstack(m, m[indices]) 
+                if max_num - m.shape[0] > 0:
+                    indices = torch.randint(m.shape[0], size=(max_num-m.shape[0],))
+                    means[idx] = torch.vstack((m, m[indices])) 
             
             return means
 
 
         # Train the global index model
-        means = list(map(lambda i: (i.means,), self._l_model))
+        means = list(map(lambda i: i.means, self._l_model))
+        means = resampling(means)
+
         self._g_model = GIndexing(
             leafsize=self._gl_size, 
             epoch_num=self.g_epoch_num,
@@ -90,11 +93,34 @@ class Indexing:
         self._g_model.train(model_list=means)
         print("finish")
 
-    def query(self, qp, k):
-        # predict the query point in which local model
-        pred = self._g_model.query(qp)
+    def query(self, qp, k, g_block_range=None, l_block_range=None):
+        # predict the query point in which search range (local models)
+        g_range = self._g_model.query(qp, block_range=g_block_range)
 
-        # get the topk result indices
-        indices = self._l_model[pred].query(qp, k)
+        # get the topk candidate datapoints.
+        if len(g_range) == 1:
+            candidates = self._l_model[g_range[0]].query(qp, k, block_range=l_block_range)
+            return candidates[:, -1]
+
+        data = None
+        for i in g_range:
+            candidates = self._l_model[i].query(qp, k, block_range=l_block_range)
+            if data == None:
+                data = candidates
+            else:
+                data = torch.vstack((data, candidates)) 
+
+        norm = torch.norm(data[:, :-1] - qp, dim=(1))
+        topk = torch.topk(norm, k, largest=False)[1]
+        indices = data[topk, -1]
 
         return indices
+    
+
+    def get_search_blocks_num(self) -> int:
+        total_blocks_num = 0
+        for l_model in self._l_model:
+            if l_model.max_block != None:
+                total_blocks_num += l_model.max_block
+
+        return total_blocks_num.int().item()

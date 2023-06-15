@@ -85,12 +85,16 @@ class LIndexing:
         self.mlp.eval()
        
 
-    def query(self, qp, k) -> list:
+    def query(self, qp, k, block_range=None) -> list:
         # print(f"max blocks: {self.max_block}")
         qp = qp.reshape(1, qp.shape[0])
 
         # Default search blocks
-        block_size = self.max_block if self.block_range > self.max_block else self.block_range
+        if block_range != None:
+            block_size = self.max_block if block_range > self.max_block else block_range
+        else:
+            block_size = self.max_block if self.block_range > self.max_block else self.block_range
+        
         pred_topk =  torch.topk(self.mlp(qp).flatten(), block_size).indices
 
         search_range = torch.where(
@@ -100,7 +104,7 @@ class LIndexing:
         search_points = self.index_data[search_range]
         norm = torch.norm(search_points[:, :-1] - qp, dim=(1))
         topk = torch.topk(norm, k, largest=False)[1]
-        indices = search_points[topk, -1]
+        datapoints = search_points[topk]
 
-        return indices
+        return datapoints
     
