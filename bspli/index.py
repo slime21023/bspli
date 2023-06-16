@@ -1,6 +1,7 @@
 from utils.Partitioning import random_partitioning, max_partitioning
 from utils.Gindex import GIndexing
 from utils.Lindex import LIndexing
+import faiss
 
 import torch
 import sys
@@ -124,3 +125,8 @@ class Indexing:
                 total_blocks_num += l_model.max_block
 
         return total_blocks_num.int().item()
+    
+    def isin(self, qp):
+        # predict the query point in which search range (local models)
+        g_range = self._g_model.query(qp, block_range=0)
+        return self._l_model[g_range[0]].isin(qp)

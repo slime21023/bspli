@@ -5,6 +5,7 @@ from torch.autograd import Variable
 from torch import optim
 from torch.utils.data import DataLoader, TensorDataset
 
+
 # check if the GPU runtime env is available
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -35,9 +36,9 @@ class GIndexing:
         self.mlp = nn.Sequential(
             nn.Linear(in_features=train_data.shape[1], out_features=self.hidden_size),
             nn.LeakyReLU(0.2),
-            nn.Linear(self.hidden_size, int(self.hidden_size/2)),
+            nn.Linear(self.hidden_size, self.hidden_size),
             nn.LeakyReLU(0.2),
-            nn.Linear(int(self.hidden_size/2), 1),
+            nn.Linear(self.hidden_size, 1),
         ).to(device)
         
 

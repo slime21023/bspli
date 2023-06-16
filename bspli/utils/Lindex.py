@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 from torch import optim
 from torch.utils.data import DataLoader, TensorDataset
+import faiss
 
 # check if the GPU runtime env is available
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -38,13 +39,15 @@ class LIndexing:
         
         # Define the model for local learned index
         self.mlp = nn.Sequential(
-            nn.Linear(in_features=train_data.shape[1], out_features=self.hidden_size),
-            nn.LeakyReLU(negative_slope=0.09),
-            nn.Linear(self.hidden_size, int(self.hidden_size/2)),
-            nn.LeakyReLU(negative_slope=0.09),
-            nn.Linear(int(self.hidden_size/2), self.max_block),
-            # nn.Softmax(dim=1),
-            nn.Hardsigmoid(),
+            nn.LazyLinear(self.hidden_size, bias=True),
+            # nn.Linear(in_features=train_data.shape[1], out_features=self.hidden_size),
+            # nn.LeakyReLU(negative_slope=0.09),
+            nn.Hardtanh(-4, 4),
+            nn.LazyLinear(self.hidden_size, bias=True),
+            # nn.RReLU(0.1, 0.9),
+            nn.PReLU(),
+            nn.LazyLinear(self.max_block, bias=True),
+            nn.Softmax(dim=1),
         ).to(device)
 
         # print(self.mlp)
@@ -102,9 +105,23 @@ class LIndexing:
         )[0]
         
         search_points = self.index_data[search_range]
+        
         norm = torch.norm(search_points[:, :-1] - qp, dim=(1))
         topk = torch.topk(norm, k, largest=False)[1]
         datapoints = search_points[topk]
 
         return datapoints
     
+
+    def isin(self, qp):
+        qp = qp.reshape(1, qp.shape[0])
+        pred_topk =  torch.topk(self.mlp(qp).flatten(), 1).indices
+        search_range = torch.where(
+            torch.isin(self.blocks, pred_topk)
+        )[0]
+        
+        search_points = self.index_data[search_range]
+
+        qp = qp.flatten()
+        check_tensor =   (search_points[:, :-1] == qp).all(dim=1)
+        return torch.any(check_tensor).item()
