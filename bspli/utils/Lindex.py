@@ -39,15 +39,16 @@ class LIndexing:
         
         # Define the model for local learned index
         self.mlp = nn.Sequential(
-            nn.LazyLinear(self.hidden_size, bias=True),
-            # nn.Linear(in_features=train_data.shape[1], out_features=self.hidden_size),
-            # nn.LeakyReLU(negative_slope=0.09),
-            nn.Hardtanh(-4, 4),
-            nn.LazyLinear(self.hidden_size, bias=True),
-            # nn.RReLU(0.1, 0.9),
+            nn.LazyLinear(self.hidden_size, bias=False),
             nn.PReLU(),
-            nn.LazyLinear(self.max_block, bias=True),
-            nn.Softmax(dim=1),
+            nn.LazyLinear(self.hidden_size, bias=False),
+            nn.PReLU(),
+            nn.LazyLinear(self.hidden_size, bias=False),
+            nn.PReLU(),
+            nn.LazyLinear(self.hidden_size, bias=False),
+            nn.PReLU(),
+            nn.LazyLinear(self.max_block, bias=False),
+            nn.Softsign(),
         ).to(device)
 
         # print(self.mlp)
@@ -88,7 +89,7 @@ class LIndexing:
         self.mlp.eval()
        
 
-    def query(self, qp, k, block_range=None) -> list:
+    def query(self, qp, k=10, block_range=None) -> list:
         # print(f"max blocks: {self.max_block}")
         qp = qp.reshape(1, qp.shape[0])
 
@@ -112,15 +113,41 @@ class LIndexing:
 
         return datapoints
     
+    
+    def query_with_threshold(self, qp, k=10, threshold=0.7) -> torch.Tensor | None:
+        qp = qp.reshape(1, qp.shape[0])
+        prob = self.mlp(qp).flatten()
+
+        def min_max_normalize(data):
+            """
+            softsign range normalize
+            """
+            return (data + 1) / 2
+        
+        prob = min_max_normalize(prob)
+        # print(f"prob: {prob}")
+        preb_block = torch.where( prob> threshold)[0]
+        # print(f"search range : {search_range}")
+
+        if preb_block.size(dim=0) == 0:
+            return None
+        
+        search_range = torch.where(
+            torch.isin(self.blocks, preb_block)
+        )[0] 
+
+        search_points = self.index_data[search_range]
+        norm = torch.norm(search_points[:, :-1] - qp, dim=(1))
+        k = search_points.size(dim=0) if k > search_points.size(dim=0) else k
+
+        topk = torch.topk(norm, k, largest=False)[1]
+        datapoints = search_points[topk]
+        return datapoints
+
 
     def isin(self, qp):
         qp = qp.reshape(1, qp.shape[0])
-        pred_topk =  torch.topk(self.mlp(qp).flatten(), 1).indices
-        search_range = torch.where(
-            torch.isin(self.blocks, pred_topk)
-        )[0]
-        
-        search_points = self.index_data[search_range]
+        search_points = self.index_data
 
         qp = qp.flatten()
         check_tensor =   (search_points[:, :-1] == qp).all(dim=1)

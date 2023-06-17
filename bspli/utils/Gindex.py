@@ -34,11 +34,13 @@ class GIndexing:
 
         # Define the model for global learned index
         self.mlp = nn.Sequential(
-            nn.Linear(in_features=train_data.shape[1], out_features=self.hidden_size),
-            nn.LeakyReLU(0.2),
-            nn.Linear(self.hidden_size, self.hidden_size),
-            nn.LeakyReLU(0.2),
-            nn.Linear(self.hidden_size, 1),
+            # nn.Linear(in_features=train_data.shape[1], out_features=self.hidden_size),
+            nn.LazyLinear(self.hidden_size, bias=False),
+            nn.PReLU(),
+            nn.LazyLinear(self.hidden_size, bias=False),
+            nn.PReLU(),
+            nn.LazyLinear(1, bias=False),
+            nn.PReLU(),
         ).to(device)
         
 

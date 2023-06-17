@@ -94,7 +94,7 @@ class Indexing:
         self._g_model.train(model_list=means)
         print("finish")
 
-    def query(self, qp, k, g_block_range=None, l_block_range=None):
+    def query(self, qp, k=10, g_block_range=None, l_block_range=None):
         # predict the query point in which search range (local models)
         g_range = self._g_model.query(qp, block_range=g_block_range)
 
@@ -117,6 +117,30 @@ class Indexing:
 
         return indices
     
+    def query_with_threshold(self, qp, k=10, threshold=0.7, g_block_range=None):
+        g_range = self._g_model.query(qp, block_range=g_block_range)
+
+        # get the topk candidate datapoints.
+        if len(g_range) == 1:
+            candidates = self._l_model[g_range[0]].query_with_threshold(qp, k, threshold)
+            if candidates == None:
+                return torch.tensor([])
+            else:
+                return candidates[:, -1]
+        
+        data = None
+        for i in g_range:
+            candidates = self._l_model[i].query_with_threshold(qp, k, threshold)
+            if data == None and candidates != None:
+                data = candidates
+            elif candidates != None:
+                data = torch.vstack((data, candidates)) 
+
+        norm = torch.norm(data[:, :-1] - qp, dim=(1))
+        k = data.size(dim=0) if k > data.size(dim=0) else k
+        topk = torch.topk(norm, k, largest=False)[1]
+        indices = data[topk, -1]
+        return indices
 
     def get_search_blocks_num(self) -> int:
         total_blocks_num = 0
