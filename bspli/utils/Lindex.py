@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 from torch import optim
 from torch.utils.data import DataLoader, TensorDataset
-import faiss
+from torch.nn.functional import one_hot
 
 # check if the GPU runtime env is available
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -52,21 +52,26 @@ class LIndexing:
         ).to(device)
 
         # print(self.mlp)
+        # print(f"train labels shape: {train_labels.shape}")
+        encoded_train_labels = one_hot(train_labels.reshape(train_labels.shape[0]))
+        # print(f"encoded_train_labels: {encoded_train_labels.shape}")
+
         loader = DataLoader(TensorDataset(
-            train_data, train_labels), shuffle=True, batch_size=400)
+            train_data, encoded_train_labels), shuffle=True, batch_size=200)
         
-        self.optimizer = optim.Adadelta(self.mlp.parameters(), lr=1.0, rho=0.9)
+        self.optimizer = optim.AdamW(self.mlp.parameters())
+        # self.optimizer = optim.Adadelta(self.mlp.parameters(), lr=1.0, rho=0.9)
+
         # self.loss_fn = nn.HuberLoss(reduction ="mean", delta=0.48)
-        self.loss_fn = nn.MultiMarginLoss(reduction ="sum")
+        self.loss_fn = nn.CrossEntropyLoss(reduction ="mean", label_smoothing=0.25)
         self.mlp.train()
 
         for epoch  in range(self.epoch_num):
             for batch, (points, labels) in enumerate(loader, 0):
-                labels = labels.reshape(labels.shape[0])
 
                 # get the inputs
                 points = Variable(points.type(torch.FloatTensor))
-                labels = Variable(labels.type(torch.LongTensor))
+                labels = Variable(labels.type(torch.FloatTensor))
 
                 # zero the parameter gradients
                 self.optimizer.zero_grad()
@@ -83,8 +88,8 @@ class LIndexing:
                 # adjust parameters based on the calculated gradients
                 self.optimizer.step()
 
-                if batch % 100 == 99:
-                    print(f'{epoch + 1}, {batch + 1} loss: {loss.item() / 100 }')
+                if batch % 10 == 9:
+                    print(f'{epoch + 1}, {batch + 1} loss: {loss.item() / 200 }')
 
         self.mlp.eval()
        

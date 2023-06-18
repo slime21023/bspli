@@ -75,7 +75,7 @@ class GIndexing:
                 # adjust parameters based on the calculated gradients
                 self.optimizer.step()
 
-                if batch % 100 == 99:
+                if batch % 50 == 49:
                     print(f'{epoch + 1}, {batch + 1} loss: {loss.item() / 100 }')
 
         self.mlp.eval()
