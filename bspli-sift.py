@@ -8,18 +8,17 @@ import index
 import torch
 import pandas as pd
 
-mnist = np.load("dataset/mnist-784-euclidean.npy")
-print(f'mnist data shape: {mnist.shape}')
-print(f'mnist dtype: {mnist.dtype}')
+sift = np.load("dataset/sift-128-euclidean.npy")
+print(f'sift data shape: {sift.shape}')
 
-mnist_tensor = torch.from_numpy(mnist)
-print(f'mnist tensor shape: {mnist_tensor.shape}')
+sift_tensor = torch.from_numpy(sift)
+print(f'sift tensor shape: {sift_tensor.shape}')
 
 build_time = 0
 start = time.time()
 idx = index.Indexing(
-    gl_size=10000, 
-    ll_size=2000,
+    gl_size=80000, 
+    ll_size=20000,
     g_epoch_num=3,
     l_epoch_num=10,
     g_hidden_size=5,
@@ -28,7 +27,7 @@ idx = index.Indexing(
     l_block_range=4,
     random_partitioning=False
 )
-idx.train(mnist_tensor)
+idx.train(sift_tensor)
 build_time += (time.time() - start)
 
 print(f"local model len:{len(idx._l_model)}")
@@ -38,13 +37,13 @@ def recall(pred, true):
     return x.sum() / true.size
 
 # Brute Search
-flat = faiss.IndexFlatL2(mnist.shape[1])
-flat.add(mnist)
+flat = faiss.IndexFlatL2(sift.shape[1])
+flat.add(sift)
 
-D, FLAT_I = flat.search(mnist[0].reshape(1, mnist.shape[1]), k=100) 
+D, FLAT_I = flat.search(sift[0].reshape(1, sift.shape[1]), k=100) 
 print(f'brute query: {FLAT_I}')
 
-qp = torch.from_numpy(mnist[0])
+qp = torch.from_numpy(sift[0])
 # print(qp)
 pred = idx.query(qp, k=100)
 print(f"recall: {recall(pred, FLAT_I)}")
@@ -54,7 +53,6 @@ print(f"pred: {pred}")
 
 print(f"total blocks: {idx.get_search_blocks_num()}")
 
-
 ##########  Query Benchmark ##############
 
 # result = []
@@ -63,7 +61,7 @@ print(f"total blocks: {idx.get_search_blocks_num()}")
 #     indices = np.random.choice(data.shape[0], size, replace=False)
 #     query_time = 0
 #     cur_recall = 0
-    
+
 #     # query
 #     for i in indices:
 #         q = torch.from_numpy(data[i])
@@ -77,12 +75,18 @@ print(f"total blocks: {idx.get_search_blocks_num()}")
 #     print(f"result: {item}")
 #     result.append(item)
 
-
 # # result item: (query_time, recall, g_block_range, l_block_range)
-# test_range= [ (3, 1), (3, 5), (3, 7), (5, 1), (5, 5), (5, 7), (7, 1), (7, 5), (7, 7), (10, 1), (10, 5), (10, 7)]
+# test_range= [ (3, 1), (3, 5), (3, 7), 
+#              (5, 1), (5, 5), (5, 7), 
+#              (7, 1), (7, 5), (7, 7), 
+#              (10, 1), (10, 5), (10, 7),
+#              (13, 1), (13, 5), (13, 7),
+#              (15, 1), (15, 5), (15, 7),
+#              (17, 1), (17, 5), (17, 7),
+#              ]
 
 # for block_range in test_range:
-#     benchmark_knn_query(mnist, idx, block_range[0], block_range[1], size=1000, k=10)
+#     benchmark_knn_query(sift, idx, block_range[0], block_range[1], size=1000, k=10)
 
 # print(result)
 
@@ -110,9 +114,17 @@ def benchmark_knn_query_with_threshold(data, index, g_block_range, threshold=0.5
     result.append(item)
 
 
-test_range = [ (3, 0.5), (3, 0.1), (3, 0.05), (5, 0.5), (5, 0.1), (5, 0.05), (7, 0.5), (7, 0.1), (7, 0.05), (10, 0.5), (10, 0.1), (10, 0.05)]
+test_range = [ (3, 0.5), (3, 0.1), (3, 0.05),
+               (5, 0.5), (5, 0.1), (5, 0.05),
+               (7, 0.5), (7, 0.1), (7, 0.05), 
+               (10, 0.5), (10, 0.1), (10, 0.05),
+               (13, 0.5), (13, 0.1), (13, 0.05),
+               (15, 0.5), (15, 0.1), (15, 0.05),
+               (17, 0.5), (17, 0.1), (17, 0.05),
+             ]
 
 for block_range in test_range:
-    benchmark_knn_query_with_threshold(mnist, idx, block_range[0], block_range[1], size=1000, k=10)
+    benchmark_knn_query_with_threshold(sift, idx, block_range[0], block_range[1], size=1000, k=10)
 
 print(result)
+

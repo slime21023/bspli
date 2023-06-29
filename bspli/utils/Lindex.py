@@ -45,8 +45,8 @@ class LIndexing:
             nn.PReLU(),
             nn.LazyLinear(self.hidden_size, bias=False),
             nn.PReLU(),
-            nn.LazyLinear(self.hidden_size, bias=False),
-            nn.PReLU(),
+            # nn.LazyLinear(self.hidden_size, bias=False),
+            # nn.PReLU(),
             nn.LazyLinear(self.max_block, bias=False),
             nn.Softsign(),
         ).to(device)

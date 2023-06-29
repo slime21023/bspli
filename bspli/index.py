@@ -85,7 +85,6 @@ class Indexing:
         means = resampling(means)
 
         self._g_model = GIndexing(
-            leafsize=self._gl_size, 
             epoch_num=self.g_epoch_num,
             block_range=self.g_block_range,
             hidden_size=self.g_hidden_size

@@ -15,8 +15,7 @@ class GIndexing:
     To predict the query point in which local learned indexing model
     """
 
-    def __init__(self, leafsize=2, epoch_num = 20, hidden_size = 100, block_range=2):
-        self.leafsize = leafsize
+    def __init__(self, epoch_num = 20, hidden_size = 100, block_range=2):
         self.epoch_num = epoch_num
         self.hidden_size = hidden_size
         self.block_range = block_range
@@ -48,8 +47,8 @@ class GIndexing:
             train_data, train_labels
         ), shuffle=True, batch_size=5)
 
-        self.optimizer = optim.Adamax(self.mlp.parameters(), lr=0.1)
-        self.loss_fn = nn.SmoothL1Loss(reduction ="mean")
+        self.optimizer = optim.AdamW(self.mlp.parameters())
+        self.loss_fn = nn.SmoothL1Loss(reduction ="sum")
         self.mlp.train()
 
         for epoch  in range(self.epoch_num):
@@ -75,7 +74,7 @@ class GIndexing:
                 # adjust parameters based on the calculated gradients
                 self.optimizer.step()
 
-                if batch % 50 == 49:
+                if batch % 10 == 9:
                     print(f'{epoch + 1}, {batch + 1} loss: {loss.item() / 100 }')
 
         self.mlp.eval()
