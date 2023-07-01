@@ -55,41 +55,44 @@ print(f"total blocks: {idx.get_search_blocks_num()}")
 
 ##########  Query Benchmark ##############
 
-# result = []
+result = []
 
-# def benchmark_knn_query(data, index, g_block_range, l_block_range, size=1000, k=100):
-#     indices = np.random.choice(data.shape[0], size, replace=False)
-#     query_time = 0
-#     cur_recall = 0
+def benchmark_knn_query(data, index, g_block_range, l_block_range, size=1000, k=100):
+    indices = np.random.choice(data.shape[0], size, replace=False)
+    query_time = 0
+    cur_recall = 0
 
-#     # query
-#     for i in indices:
-#         q = torch.from_numpy(data[i])
-#         start = time.time()
-#         qk = index.query(q,  g_block_range=g_block_range, l_block_range=l_block_range, k=100)
-#         query_time += (time.time() - start)
-#         D, FLAT_I = flat.search(data[i].reshape(1, data.shape[1]), k=k) 
-#         cur_recall += recall(qk, FLAT_I)
+    # query
+    for i in indices:
+        q = torch.from_numpy(data[i])
+        start = time.time()
+        qk = index.query(q,  g_block_range=g_block_range, l_block_range=l_block_range, k=100)
+        query_time += (time.time() - start)
+        D, FLAT_I = flat.search(data[i].reshape(1, data.shape[1]), k=k) 
+        cur_recall += recall(qk, FLAT_I)
     
-#     item = (query_time/1000, cur_recall/1000, g_block_range, l_block_range)
-#     print(f"result: {item}")
-#     result.append(item)
+    item = (query_time/1000, cur_recall/1000, g_block_range, l_block_range)
+    print(f"result: {item}")
+    result.append(item)
 
-# # result item: (query_time, recall, g_block_range, l_block_range)
-# test_range= [ (3, 1), (3, 5), (3, 7), 
-#              (5, 1), (5, 5), (5, 7), 
-#              (7, 1), (7, 5), (7, 7), 
-#              (10, 1), (10, 5), (10, 7),
-#              (13, 1), (13, 5), (13, 7),
-#              (15, 1), (15, 5), (15, 7),
-#              (17, 1), (17, 5), (17, 7),
-#              ]
+# result item: (query_time, recall, g_block_range, l_block_range)
+test_range= [ (3, 1), (3, 5), (3, 7), 
+             (5, 1), (5, 5), (5, 7), 
+             (7, 1), (7, 5), (7, 7), 
+             (10, 1), (10, 5), (10, 7),
+             (13, 1), (13, 5), (13, 7),
+             (15, 1), (15, 5), (15, 7),
+             (17, 1), (17, 5), (17, 7),
+             (20, 1), (20, 5), (20, 7),
+             (23, 1), (23, 5), (23, 7),
+             ]
 
-# for block_range in test_range:
-#     benchmark_knn_query(sift, idx, block_range[0], block_range[1], size=1000, k=10)
+for block_range in test_range:
+    benchmark_knn_query(sift, idx, block_range[0], block_range[1], size=1000, k=10)
 
-# print(result)
-
+print(result)
+benchmark_df = pd.DataFrame(result, columns=['query_time', 'recall', 'g_range', 'l_range'])
+benchmark_df.to_csv("./results/sift-benchmark.csv",index=False)
 
 ##########  Query with threshold Benchmark ##############
 
@@ -121,10 +124,13 @@ test_range = [ (3, 0.5), (3, 0.1), (3, 0.05),
                (13, 0.5), (13, 0.1), (13, 0.05),
                (15, 0.5), (15, 0.1), (15, 0.05),
                (17, 0.5), (17, 0.1), (17, 0.05),
+               (20, 0.5), (20, 0.1), (20, 0.05),
+               (23, 0.5), (23, 0.1), (23, 0.05),
              ]
 
 for block_range in test_range:
     benchmark_knn_query_with_threshold(sift, idx, block_range[0], block_range[1], size=1000, k=10)
 
 print(result)
-
+benchmark_threshold_df = pd.DataFrame(result, columns=['query_time', 'recall', 'g_range', 'threshold'])
+benchmark_threshold_df.to_csv("./results/sift-benchmark-threshold.csv",index=False)

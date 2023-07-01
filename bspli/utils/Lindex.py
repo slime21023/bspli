@@ -111,7 +111,8 @@ class LIndexing:
         )[0]
         
         search_points = self.index_data[search_range]
-        
+        k = k if k < search_points.shape[0] else search_points.shape[0]
+
         norm = torch.norm(search_points[:, :-1] - qp, dim=(1))
         topk = torch.topk(norm, k, largest=False)[1]
         datapoints = search_points[topk]

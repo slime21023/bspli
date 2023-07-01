@@ -8,18 +8,18 @@ import index
 import torch
 import pandas as pd
 
-mnist = np.load("dataset/mnist-784-euclidean.npy")
-print(f'mnist data shape: {mnist.shape}')
-print(f'mnist dtype: {mnist.dtype}')
+gist = np.load("dataset/half-gist-960-euclidean.npy")
+print(f'gist data shape: {gist.shape}')
+print(f'gist dtype: {gist.dtype}')
 
-mnist_tensor = torch.from_numpy(mnist)
-print(f'mnist tensor shape: {mnist_tensor.shape}')
+gist_tensor = torch.from_numpy(gist)
+print(f'gist tensor shape: {gist_tensor.shape}')
 
 build_time = 0
 start = time.time()
 idx = index.Indexing(
-    gl_size=10000, 
-    ll_size=2000,
+    gl_size=40000, 
+    ll_size=10000,
     g_epoch_num=3,
     l_epoch_num=10,
     g_hidden_size=5,
@@ -28,7 +28,7 @@ idx = index.Indexing(
     l_block_range=4,
     random_partitioning=False
 )
-idx.train(mnist_tensor)
+idx.train(gist_tensor)
 build_time += (time.time() - start)
 
 print(f"local model len:{len(idx._l_model)}")
@@ -38,13 +38,13 @@ def recall(pred, true):
     return x.sum() / true.size
 
 # Brute Search
-flat = faiss.IndexFlatL2(mnist.shape[1])
-flat.add(mnist)
+flat = faiss.IndexFlatL2(gist.shape[1])
+flat.add(gist)
 
-D, FLAT_I = flat.search(mnist[0].reshape(1, mnist.shape[1]), k=100) 
+D, FLAT_I = flat.search(gist[0].reshape(1, gist.shape[1]), k=100) 
 print(f'brute query: {FLAT_I}')
 
-qp = torch.from_numpy(mnist[0])
+qp = torch.from_numpy(gist[0])
 # print(qp)
 pred = idx.query(qp, k=100)
 print(f"recall: {recall(pred, FLAT_I)}")
@@ -79,14 +79,24 @@ def benchmark_knn_query(data, index, g_block_range, l_block_range, size=1000, k=
 
 
 # result item: (query_time, recall, g_block_range, l_block_range)
-test_range= [ (3, 1), (3, 5), (3, 7), (5, 1), (5, 5), (5, 7), (7, 1), (7, 5), (7, 7), (10, 1), (10, 5), (10, 7)]
+test_range= [ 
+    (3, 1), (3, 5), (3, 7),
+    (5, 1), (5, 5), (5, 7),
+    (7, 1), (7, 5), (7, 7),
+    (10, 1), (10, 5), (10, 7),
+    (13, 1), (13, 5), (13, 7),
+    (15, 1), (15, 5), (15, 7),
+    (17, 1), (17, 5), (17, 7),
+    (20, 1), (20, 5), (20, 7),
+    (23, 1), (23, 5), (23, 7),
+]
 
 for block_range in test_range:
-    benchmark_knn_query(mnist, idx, block_range[0], block_range[1], size=1000, k=10)
+    benchmark_knn_query(gist, idx, block_range[0], block_range[1], size=1000, k=10)
 
 print(result)
 benchmark_df = pd.DataFrame(result, columns=['query_time', 'recall', 'g_range', 'l_range'])
-benchmark_df.to_csv("./results/mnist-benchmark.csv",index=False)
+benchmark_df.to_csv("./results/gist-benchmark.csv",index=False)
 
 ##########  Query with threshold Benchmark ##############
 
@@ -111,11 +121,21 @@ def benchmark_knn_query_with_threshold(data, index, g_block_range, threshold=0.5
     result.append(item)
 
 
-test_range = [ (3, 0.5), (3, 0.1), (3, 0.05), (5, 0.5), (5, 0.1), (5, 0.05), (7, 0.5), (7, 0.1), (7, 0.05), (10, 0.5), (10, 0.1), (10, 0.05)]
+test_range = [ 
+    (3, 0.5), (3, 0.1), (3, 0.05),
+    (5, 0.5), (5, 0.1), (5, 0.05),
+    (7, 0.5), (7, 0.1), (7, 0.05),
+    (10, 0.5), (10, 0.1), (10, 0.05),
+    (13, 0.5), (13, 0.1), (13, 0.05),
+    (15, 0.5), (15, 0.1), (15, 0.05),
+    (17, 0.5), (17, 0.1), (17, 0.05),
+    (20, 0.5), (20, 0.1), (20, 0.05),
+    (23, 0.5), (23, 0.1), (23, 0.05),
+]
 
 for block_range in test_range:
-    benchmark_knn_query_with_threshold(mnist, idx, block_range[0], block_range[1], size=1000, k=10)
+    benchmark_knn_query_with_threshold(gist, idx, block_range[0], block_range[1], size=1000, k=10)
 
 print(result)
 benchmark_threshold_df = pd.DataFrame(result, columns=['query_time', 'recall', 'g_range', 'threshold'])
-benchmark_threshold_df.to_csv("./results/mnist-benchmark-threshold.csv",index=False)
+benchmark_threshold_df.to_csv("./results/gist-benchmark-threshold.csv",index=False)
