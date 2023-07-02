@@ -8,12 +8,12 @@ import index
 import torch
 import pandas as pd
 
-mnist = np.load("dataset/mnist-784-euclidean.npy")
-print(f'mnist data shape: {mnist.shape}')
-print(f'mnist dtype: {mnist.dtype}')
+gist = np.load("dataset/half-gist-960-euclidean.npy")
+print(f'gist data shape: {gist.shape}')
+print(f'gist dtype: {gist.dtype}')
 
-mnist_tensor = torch.from_numpy(mnist)
-print(f'mnist tensor shape: {mnist_tensor.shape}')
+gist_tensor = torch.from_numpy(gist)
+print(f'gist tensor shape: {gist_tensor.shape}')
 
 build_time = 0
 start = time.time()
@@ -28,7 +28,7 @@ idx = index.Indexing(
     l_block_range=4,
     random_partitioning=False
 )
-idx.train(mnist_tensor)
+idx.train(gist_tensor)
 build_time += (time.time() - start)
 
 print(f"build time: {build_time}")
@@ -53,17 +53,22 @@ test_range = [
     (3, 1), (3, 5), (3, 7),
     (5, 1), (5, 5), (5, 7),
     (7, 1), (7, 5), (7, 7),
-    (10, 1), (10, 5), (10, 7)
+    (10, 1), (10, 5), (10, 7),
+    (13, 1), (13, 5), (13, 7),
+    (15, 1), (15, 5), (15, 7),
+    (17, 1), (17, 5), (17, 7),
+    (20, 1), (20, 5), (20, 7),
+    (23, 1), (23, 5), (23, 7),
 ]
 
 for block_range in test_range:
-    measure_predict_time(mnist, idx, block_range[0], block_range[1], size=1000)
+    measure_predict_time(gist, idx, block_range[0], block_range[1], size=1000)
 
 print(result)
 measure_df = pd.DataFrame(result, columns=['predict_time', 'g_range', 'l_range'])
 measure_df["build_time"] = build_time
 
-measure_df.to_csv("./results/measure-time-mnist.csv",index=False)
+measure_df.to_csv("./results/measure-time-gist.csv",index=False)
 
 ##########  Query with threshold Benchmark ##############
 
@@ -83,17 +88,22 @@ def measure_predict_time_with_threshold(data, index, g_block_range, threshold=0.
 
 
 test_range = [ 
-    (3, 0.5), (3, 0.1), (3, 0.05), 
-    (5, 0.5), (5, 0.1), (5, 0.05), 
+    (3, 0.5), (3, 0.1), (3, 0.05),
+    (5, 0.5), (5, 0.1), (5, 0.05),
     (7, 0.5), (7, 0.1), (7, 0.05),
-    (10, 0.5), (10, 0.1), (10, 0.05)
+    (10, 0.5), (10, 0.1), (10, 0.05),
+    (13, 0.5), (13, 0.1), (13, 0.05),
+    (15, 0.5), (15, 0.1), (15, 0.05),
+    (17, 0.5), (17, 0.1), (17, 0.05),
+    (20, 0.5), (20, 0.1), (20, 0.05),
+    (23, 0.5), (23, 0.1), (23, 0.05),
 ]
 
 for block_range in test_range:
-    measure_predict_time_with_threshold(mnist, idx, block_range[0], block_range[1], size=1000)
+    measure_predict_time_with_threshold(gist, idx, block_range[0], block_range[1], size=1000)
 
 print(result)
 measure_threshold_df = pd.DataFrame(result, columns=['predict_time', 'g_range', 'threshold'])
 measure_threshold_df["build_time"] = build_time
 
-measure_threshold_df.to_csv("./results/measure-time-threshold-mnist.csv",index=False)
+measure_threshold_df.to_csv("./results/measure-time-threshold-gist.csv",index=False)
