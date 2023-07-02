@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 from torch import optim
 from torch.utils.data import DataLoader, TensorDataset
+import time
 from torch.nn.functional import one_hot
 
 # check if the GPU runtime env is available
@@ -149,6 +150,55 @@ class LIndexing:
         topk = torch.topk(norm, k, largest=False)[1]
         datapoints = search_points[topk]
         return datapoints
+
+    def measure_time(self, qp, block_range=None) -> float:
+        start = time.time()
+
+        qp = qp.reshape(1, qp.shape[0])
+        prob = self.mlp(qp).flatten()
+
+        # Default search blocks
+        if block_range != None:
+            block_size = self.max_block if block_range > self.max_block else block_range
+        else:
+            block_size = self.max_block if self.block_range > self.max_block else self.block_range
+        
+        pred_topk =  torch.topk(prob, block_size).indices
+
+        search_range = torch.where(
+            torch.isin(self.blocks, pred_topk)
+        )[0]
+
+        end = time.time()
+        return (end - start)
+    
+    
+    def measure_time_with_threshold(self, qp, threshold=0.7) -> float:
+        start = time.time()
+        qp = qp.reshape(1, qp.shape[0])
+        prob = self.mlp(qp).flatten()
+
+        def min_max_normalize(data):
+            """
+            softsign range normalize
+            """
+            return (data + 1) / 2
+        
+        prob = min_max_normalize(prob)
+        # print(f"prob: {prob}")
+        preb_block = torch.where( prob> threshold)[0]
+        # print(f"search range : {search_range}")
+
+        if preb_block.size(dim=0) == 0:
+            end = time.time()
+            return (end - start)
+        
+        search_range = torch.where(
+            torch.isin(self.blocks, preb_block)
+        )[0] 
+        
+        end = time.time()
+        return (end - start)
 
 
     def isin(self, qp):

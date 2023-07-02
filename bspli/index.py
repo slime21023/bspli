@@ -1,8 +1,7 @@
 from utils.Partitioning import random_partitioning, max_partitioning
 from utils.Gindex import GIndexing
 from utils.Lindex import LIndexing
-import faiss
-
+import time
 import torch
 import sys
 sys.setrecursionlimit(100000)
@@ -97,7 +96,6 @@ class Indexing:
         # predict the query point in which search range (local models)
         g_range = self._g_model.query(qp, block_range=g_block_range)
 
-        # get the topk candidate datapoints.
         if len(g_range) == 1:
             candidates = self._l_model[g_range[0]].query(qp, k, block_range=l_block_range)
             return candidates[:, -1]
@@ -116,6 +114,7 @@ class Indexing:
 
         return indices
     
+
     def query_with_threshold(self, qp, k=10, threshold=0.7, g_block_range=None):
         g_range = self._g_model.query(qp, block_range=g_block_range)
 
@@ -140,6 +139,37 @@ class Indexing:
         topk = torch.topk(norm, k, largest=False)[1]
         indices = data[topk, -1]
         return indices
+    
+
+    def measure_time(self, qp, g_block_range=None, l_block_range=None) -> float:
+        start = time.time()
+        g_range = self._g_model.query(qp, block_range=g_block_range)
+        spend_time = time.time() - start
+
+        if len(g_range) == 1:
+            spend_time += self._l_model[g_range[0]].measure_time(qp, block_range=l_block_range)
+            return spend_time
+        
+        for i in g_range:
+            spend_time += self._l_model[i].measure_time(qp, block_range=l_block_range)
+        
+        return spend_time
+
+
+    def measure_time_with_threshold(self, qp, threshold=0.7, g_block_range=None) -> float:
+        start = time.time()
+        g_range = self._g_model.query(qp, block_range=g_block_range)
+        spend_time = time.time() - start
+
+        if len(g_range) == 1:
+            spend_time += self._l_model[g_range[0]].measure_time_with_threshold(qp, threshold=threshold)
+            return spend_time
+
+        for i in g_range:
+            spend_time += self._l_model[i].measure_time_with_threshold(qp, threshold=threshold)
+        
+        return spend_time
+
 
     def get_search_blocks_num(self) -> int:
         total_blocks_num = 0
@@ -148,6 +178,13 @@ class Indexing:
                 total_blocks_num += l_model.max_block
 
         return total_blocks_num.int().item()
+
+
+    def save(self, path):
+        torch.save(self._g_model.mlp.state_dict(), f'{path}-g.pt')
+        for count, model in enumerate(self._l_model):
+            torch.save(model.mlp, f'{path}-l-{count}.pt')
+
     
     def isin(self, qp):
         # predict the query point in which search range (local models)

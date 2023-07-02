@@ -102,4 +102,4 @@ class GIndexing:
             return range(min_block, min_block +1)
 
         return range(min_block, max_block +1)
-        
+    
