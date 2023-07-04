@@ -18,8 +18,8 @@ print(f'sift tensor shape: {sift_tensor.shape}')
 build_time = 0
 start = time.time()
 idx = index.Indexing(
-    gl_size=10000, 
-    ll_size=2000,
+    gl_size=80000, 
+    ll_size=20000,
     g_epoch_num=3,
     l_epoch_num=10,
     g_hidden_size=5,

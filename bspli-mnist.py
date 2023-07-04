@@ -54,13 +54,12 @@ print(f"pred: {pred}")
 
 print(f"total blocks: {idx.get_search_blocks_num()}")
 
-
+indices = np.random.choice(mnist.shape[0], size=1000, replace=False)
 ##########  Query Benchmark ##############
 
 result = []
 
-def benchmark_knn_query(data, index, g_block_range, l_block_range, size=1000, k=100):
-    indices = np.random.choice(data.shape[0], size, replace=False)
+def benchmark_knn_query(data, indices, index, g_block_range, l_block_range, k=100):
     query_time = 0
     cur_recall = 0
     
@@ -79,10 +78,15 @@ def benchmark_knn_query(data, index, g_block_range, l_block_range, size=1000, k=
 
 
 # result item: (query_time, recall, g_block_range, l_block_range)
-test_range= [ (3, 1), (3, 5), (3, 7), (5, 1), (5, 5), (5, 7), (7, 1), (7, 5), (7, 7), (10, 1), (10, 5), (10, 7)]
+test_range= [ 
+    (3, 1), (3, 3), (3, 5), (3, 7),
+    (5, 1), (5, 3), (5, 5), (5, 7), 
+    (7, 1), (7, 3), (7, 5), (7, 7), 
+    (10, 1), (10, 3), (10, 5), (10, 7)
+]
 
 for block_range in test_range:
-    benchmark_knn_query(mnist, idx, block_range[0], block_range[1], size=1000, k=10)
+    benchmark_knn_query(mnist, indices, idx, block_range[0], block_range[1], k=10)
 
 print(result)
 benchmark_df = pd.DataFrame(result, columns=['query_time', 'recall', 'g_range', 'l_range'])
@@ -92,8 +96,7 @@ benchmark_df.to_csv("./results/mnist-benchmark.csv",index=False)
 
 result = []
 
-def benchmark_knn_query_with_threshold(data, index, g_block_range, threshold=0.5, size=1000, k=100):
-    indices = np.random.choice(data.shape[0], size, replace=False)
+def benchmark_knn_query_with_threshold(data, indices, index, g_block_range, threshold=0.5, k=100):
     query_time = 0
     cur_recall = 0
 
@@ -111,10 +114,15 @@ def benchmark_knn_query_with_threshold(data, index, g_block_range, threshold=0.5
     result.append(item)
 
 
-test_range = [ (3, 0.5), (3, 0.1), (3, 0.05), (5, 0.5), (5, 0.1), (5, 0.05), (7, 0.5), (7, 0.1), (7, 0.05), (10, 0.5), (10, 0.1), (10, 0.05)]
+test_range = [ 
+    (3, 0.5), (3, 0.1),  (3, 0.07), (3, 0.05), 
+    (5, 0.5), (5, 0.1),  (5, 0.07), (5, 0.05), 
+    (7, 0.5), (7, 0.1),  (7, 0.07), (7, 0.05), 
+    (10, 0.5), (10, 0.1),  (10, 0.07), (10, 0.05)
+]
 
 for block_range in test_range:
-    benchmark_knn_query_with_threshold(mnist, idx, block_range[0], block_range[1], size=1000, k=10)
+    benchmark_knn_query_with_threshold(mnist, indices, idx, block_range[0], block_range[1], k=10)
 
 print(result)
 benchmark_threshold_df = pd.DataFrame(result, columns=['query_time', 'recall', 'g_range', 'threshold'])

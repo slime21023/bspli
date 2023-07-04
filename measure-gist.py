@@ -18,8 +18,8 @@ print(f'gist tensor shape: {gist_tensor.shape}')
 build_time = 0
 start = time.time()
 idx = index.Indexing(
-    gl_size=10000, 
-    ll_size=2000,
+    gl_size=40000, 
+    ll_size=10000,
     g_epoch_num=3,
     l_epoch_num=10,
     g_hidden_size=5,
