@@ -115,7 +115,7 @@ class Indexing:
         return indices
     
 
-    def query_with_threshold(self, qp, k=10, threshold=0.7, g_block_range=None):
+    def query_with_threshold(self, qp, k=10, g_block_range=None, threshold=0.7 ):
         g_range = self._g_model.query(qp, block_range=g_block_range)
 
         # get the topk candidate datapoints.
